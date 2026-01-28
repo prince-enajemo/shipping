@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
-
+import TestimonialsCarousel from "@/components/TestimonialsCarousel";
 
 const slides = [
   {
@@ -52,12 +52,9 @@ export default function Home() {
     <main className="bg-[#EDEDCE] text-[#0C2C55] overflow-x-hidden">
       <Navbar />
 
-      <section className="pt-24 md:pt-28">
-  {/* Your hero content here */}
-  
-</section>
+      <section className="pt-14 md:pt-18" />
 
-      {/* Hero Slideshow */}
+      {/* ================= HERO SLIDESHOW ================= */}
       <section className="relative h-screen w-full overflow-hidden">
         {slides.map((slide, index) => (
           <motion.div
@@ -77,7 +74,10 @@ export default function Home() {
                 {/* Left Content */}
                 <motion.div
                   initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: index === current ? 1 : 0, y: index === current ? 0 : 40 }}
+                  animate={{
+                    opacity: index === current ? 1 : 0,
+                    y: index === current ? 0 : 40,
+                  }}
                   transition={{ duration: 0.8 }}
                   className="text-white"
                 >
@@ -85,7 +85,7 @@ export default function Home() {
                     {slide.badge}
                   </span>
 
-                  <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold leading-tight mb-6">
+                  <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold leading-tight mt-14 md:mt-0 mb-6">
                     {slide.title}
                   </h1>
 
@@ -122,8 +122,12 @@ export default function Home() {
                         whileHover={{ y: -5 }}
                         className="bg-white/10 backdrop-blur-md rounded-xl p-4 text-center"
                       >
-                        <p className="text-2xl font-bold text-white">{stat.value}</p>
-                        <p className="text-sm text-[#EDEDCE]/80">{stat.label}</p>
+                        <p className="text-2xl font-bold text-white">
+                          {stat.value}
+                        </p>
+                        <p className="text-sm text-[#EDEDCE]/80">
+                          {stat.label}
+                        </p>
                       </motion.div>
                     ))}
                   </div>
@@ -132,7 +136,10 @@ export default function Home() {
                 {/* Right Side Floating Card */}
                 <motion.div
                   initial={{ opacity: 0, x: 60 }}
-                  animate={{ opacity: index === current ? 1 : 0, x: index === current ? 0 : 60 }}
+                  animate={{
+                    opacity: index === current ? 1 : 0,
+                    x: index === current ? 0 : 60,
+                  }}
                   transition={{ duration: 0.9 }}
                   className="hidden lg:block"
                 >
@@ -140,7 +147,9 @@ export default function Home() {
                     whileHover={{ y: -10 }}
                     className="bg-white rounded-2xl shadow-2xl p-8 max-w-md ml-auto"
                   >
-                    <h3 className="text-xl font-semibold mb-4">Track Your Shipment</h3>
+                    <h3 className="text-xl font-semibold mb-4">
+                      Track Your Shipment
+                    </h3>
                     <p className="text-[#296374] mb-6">
                       Enter your tracking ID to get live delivery updates.
                     </p>
@@ -180,7 +189,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About Section */}
+      {/* ================= ABOUT SECTION ================= */}
       <motion.section
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -192,7 +201,8 @@ export default function Home() {
           <h2 className="text-4xl font-bold mb-6">Why Choose SwiftTrack?</h2>
           <p className="text-lg text-[#296374] max-w-3xl mx-auto">
             We simplify logistics by combining technology, transparency, and trust.
-            With SwiftTrack, every shipment is visible, secure, and delivered with confidence.
+            With SwiftTrack, every shipment is visible, secure, and delivered with
+            confidence.
           </p>
         </div>
 
@@ -214,8 +224,13 @@ export default function Home() {
             <motion.div
               key={index}
               whileHover={{ y: -10, scale: 1.02 }}
-              className="bg-white rounded-2xl p-10 shadow-xl border-t-4 border-[#629FAD]"
+              className="bg-white rounded-2xl p-8 shadow-xl border-t-4 border-[#629FAD] flex flex-col"
             >
+              {/* Image Placeholder */}
+              <div className="h-40 w-full rounded-xl bg-gradient-to-br from-[#629FAD]/30 to-[#296374]/30 mb-6 flex items-center justify-center text-[#296374] font-semibold">
+                Image Placeholder
+              </div>
+
               <h3 className="text-xl font-semibold mb-4">{item.title}</h3>
               <p className="text-[#296374]">{item.desc}</p>
             </motion.div>
@@ -223,7 +238,7 @@ export default function Home() {
         </div>
       </motion.section>
 
-      {/* How It Works */}
+      {/* ================= HOW IT WORKS ================= */}
       <motion.section
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
@@ -261,8 +276,13 @@ export default function Home() {
             <motion.div
               key={index}
               whileHover={{ y: -8 }}
-              className="bg-[#296374] rounded-2xl p-8 shadow-lg text-center"
+              className="bg-[#296374] rounded-2xl p-6 shadow-lg text-center flex flex-col"
             >
+              {/* Image Placeholder */}
+              <div className="h-32 w-full rounded-xl bg-[#0C2C55]/40 mb-6 flex items-center justify-center text-[#EDEDCE]/80 text-sm">
+                Step Image
+              </div>
+
               <div className="text-3xl font-bold text-[#EDEDCE] mb-4">
                 {item.step}
               </div>
@@ -273,7 +293,7 @@ export default function Home() {
         </div>
       </motion.section>
 
-      {/* Features */}
+      {/* ================= FEATURES ================= */}
       <motion.section
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -300,16 +320,23 @@ export default function Home() {
             <motion.div
               key={index}
               whileHover={{ scale: 1.05, y: -6 }}
-              className="bg-white rounded-xl p-8 shadow-lg flex items-center gap-4 border-l-4 border-[#629FAD]"
+              className="bg-white rounded-xl p-6 shadow-lg border-l-4 border-[#629FAD] flex flex-col"
             >
-              <div className="w-3 h-3 bg-[#296374] rounded-full" />
-              <p className="font-medium">{item}</p>
+              {/* Image Placeholder */}
+              <div className="h-28 w-full rounded-lg bg-gradient-to-br from-[#EDEDCE] to-[#629FAD]/40 mb-5 flex items-center justify-center text-[#296374] text-sm font-medium">
+                Feature Image
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="w-3 h-3 bg-[#296374] rounded-full" />
+                <p className="font-medium">{item}</p>
+              </div>
             </motion.div>
           ))}
         </div>
       </motion.section>
 
-      {/* Business & Individual Section */}
+      {/* ================= BUSINESS & INDIVIDUALS ================= */}
       <motion.section
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
@@ -317,8 +344,13 @@ export default function Home() {
         transition={{ duration: 0.8 }}
         className="py-28 bg-[#629FAD] text-[#0C2C55] px-6"
       >
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-20">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-20 items-center">
           <motion.div whileHover={{ y: -8 }}>
+            {/* Image Placeholder */}
+            <div className="h-56 w-full rounded-2xl bg-[#EDEDCE]/70 mb-8 flex items-center justify-center font-semibold text-[#296374]">
+              Business Image
+            </div>
+
             <h3 className="text-3xl font-bold mb-6">For Businesses</h3>
             <ul className="space-y-4 text-lg">
               <li>✔ Manage bulk shipments easily</li>
@@ -329,6 +361,11 @@ export default function Home() {
           </motion.div>
 
           <motion.div whileHover={{ y: -8 }}>
+            {/* Image Placeholder */}
+            <div className="h-56 w-full rounded-2xl bg-[#EDEDCE]/70 mb-8 flex items-center justify-center font-semibold text-[#296374]">
+              Individual Image
+            </div>
+
             <h3 className="text-3xl font-bold mb-6">For Individuals</h3>
             <ul className="space-y-4 text-lg">
               <li>✔ Track personal packages easily</li>
@@ -340,7 +377,7 @@ export default function Home() {
         </div>
       </motion.section>
 
-      {/* Security Section */}
+      {/* ================= SECURITY SECTION ================= */}
       <motion.section
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -366,45 +403,24 @@ export default function Home() {
             <motion.div
               key={index}
               whileHover={{ y: -8, scale: 1.02 }}
-              className="bg-white rounded-xl p-8 shadow-lg text-center border-b-4 border-[#296374]"
+              className="bg-white rounded-xl p-6 shadow-lg text-center border-b-4 border-[#296374] flex flex-col"
             >
+              {/* Image Placeholder */}
+              <div className="h-28 w-full rounded-lg bg-[#629FAD]/30 mb-6 flex items-center justify-center text-[#296374] font-medium">
+                Security Image
+              </div>
+
               <p className="font-semibold">{item}</p>
             </motion.div>
           ))}
         </div>
       </motion.section>
 
-      {/* Testimonials */}
-      <motion.section
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className="py-28 bg-[#0C2C55] text-white px-6"
-      >
-        <div className="max-w-5xl mx-auto text-center mb-20">
-          <h2 className="text-4xl font-bold mb-6">What Our Customers Say</h2>
-        </div>
+      {/* ================= TESTIMONIALS ================= */}
+      <TestimonialsCarousel />
 
-        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
-          {[
-            "SwiftTrack made it easy for my customers to track their orders without calling me every time.",
-            "I sent important documents across states and tracked every step. Very reliable service.",
-            "Their admin dashboard is clean, fast, and easy to use. Perfect for logistics operations.",
-          ].map((text, index) => (
-            <motion.div
-              key={index}
-              whileHover={{ y: -10, scale: 1.03 }}
-              className="bg-[#296374] rounded-2xl p-10 shadow-xl"
-            >
-              <p className="text-[#EDEDCE] mb-6 text-lg">“{text}”</p>
-              <p className="font-semibold">— Verified Customer</p>
-            </motion.div>
-          ))}
-        </div>
-      </motion.section>
 
-      {/* Call to Action */}
+      {/* ================= CALL TO ACTION ================= */}
       <motion.section
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -413,7 +429,9 @@ export default function Home() {
         className="py-28 bg-[#629FAD] text-[#0C2C55] px-6"
       >
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6">Ready to Track Your Shipment?</h2>
+          <h2 className="text-4xl font-bold mb-6">
+            Ready to Track Your Shipment?
+          </h2>
           <p className="text-lg mb-12">
             Enter your tracking ID and see where your package is right now.
           </p>
@@ -438,7 +456,7 @@ export default function Home() {
         </div>
       </motion.section>
 
-      {/* Footer */}
+      {/* ================= FOOTER ================= */}
       <motion.footer
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
