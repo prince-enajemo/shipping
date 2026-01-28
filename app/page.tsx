@@ -20,7 +20,7 @@ const slides = [
     image:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmK9Swhv6T6Zi2y-wEpcuh4R8PnhoSBNe2lw&s",
     badge: "Real-Time Monitoring",
-    title: "Know Where Your Package Is — Always",
+    title: "Know Where Your Package Is Always",
     subtitle:
       "Get full visibility into your shipment’s journey with live location updates and delivery status.",
     cta: "Check Tracking",
@@ -30,7 +30,7 @@ const slides = [
     image:
       "https://img.freepik.com/free-photo/front-view-delivery-men-job-concept_23-2148684731.jpg?semt=ais_hybrid&w=740&q=80",
     badge: "Nationwide Delivery",
-    title: "Trusted Delivery Across Nigeria",
+    title: "Trusted Delivery Across The Globe",
     subtitle:
       "From pickup to final delivery, we handle your shipments with speed, care, and professionalism.",
     cta: "Create Shipment",
