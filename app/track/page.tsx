@@ -1,107 +1,151 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { db } from "../../firebaseConfig";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import jsPDF from "jspdf";
+
+type PackageType = {
+  trackingId: string;
+  packageType: string;
+  senderName: string;
+  senderAddress: string;
+  receiverName: string;
+  receiverAddress: string;
+  receiverPhone: string;
+  receiverEmail: string;
+  shipmentWeight: string;
+  shipmentType: string;
+  dateShipped: string;
+  status: string;
+  progress: number;
+};
 
 const TrackPackagePage = () => {
   const [trackingId, setTrackingId] = useState("");
-  const [packageDetails, setPackageDetails] = useState<any>(null);
+  const [pkg, setPkg] = useState<PackageType | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [searching, setSearching] = useState(false);
 
-  const handleSearch = () => {
+  const fetchPackage = async () => {
+    setLoading(true);
     setError("");
-    setPackageDetails(null);
-
-    if (!trackingId.trim()) {
-      setError("Please enter a tracking ID.");
-      return;
-    }
-
-    setSearching(true);
-
-    // Create a real-time query for the tracking ID
-    const q = query(
-      collection(db, "packages"),
-      where("trackingId", "==", trackingId.trim())
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        if (!snapshot.empty) {
-          setPackageDetails(snapshot.docs[0].data());
-        } else {
-          setError("No package found with this Tracking ID.");
-          setPackageDetails(null);
-        }
-      },
-      (err) => {
-        console.error(err);
-        setError("Failed to fetch package details.");
+    setPkg(null);
+    try {
+      const q = query(
+        collection(db, "packages"),
+        where("trackingId", "==", trackingId)
+      );
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) {
+        setError("No package found with this tracking ID.");
+      } else {
+        setPkg(snapshot.docs[0].data() as PackageType);
       }
-    );
-
-    // Cleanup subscription on unmount or when tracking ID changes
-    return () => unsubscribe();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch package.");
+    }
+    setLoading(false);
   };
 
-  return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center">Track Your Package</h1>
+  const printPackage = () => window.print();
 
-      {/* Input */}
-      <div className="max-w-md mx-auto bg-white p-6 rounded shadow-md mb-6">
+  const downloadPDF = () => {
+    if (!pkg) return;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Package Details", 20, 20);
+    let y = 30;
+    Object.entries(pkg).forEach(([key, value]) => {
+      doc.setFontSize(12);
+      doc.text(`${key.replace(/([A-Z])/g, " $1")}: ${value}`, 20, y);
+      y += 10;
+    });
+    doc.save(`Package-${pkg.trackingId}.pdf`);
+  };
+
+  // Status Steps
+  const steps = ["Processing", "In Transit", "Delivered"];
+  const currentStepIndex = pkg ? steps.indexOf(pkg.status) : 0;
+
+  return (
+    <div className="min-h-screen bg-[#EDEDCE] p-6 flex flex-col items-center">
+      <h1 className="text-3xl font-bold text-[#0C2C55] mb-6">Track Your Package</h1>
+
+      {/* Search Form */}
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mb-8">
         <input
           type="text"
           placeholder="Enter Tracking ID"
           value={trackingId}
           onChange={(e) => setTrackingId(e.target.value)}
-          className="border p-3 rounded w-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-[#629FAD] p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#296374] mb-4"
         />
         <button
-          onClick={handleSearch}
-          disabled={searching || !trackingId.trim()}
-          className={`w-full py-3 rounded font-semibold text-white transition ${
-            trackingId.trim() ? "bg-blue-500 hover:bg-blue-600" : "bg-gray-400 cursor-not-allowed"
-          }`}
+          onClick={fetchPackage}
+          className="w-full bg-[#296374] text-white py-3 rounded-xl hover:bg-[#0C2C55] transition"
         >
-          {searching ? "Tracking..." : "Track Package"}
+          Track Package
         </button>
-        {error && <p className="text-red-500 mt-2">{error}</p>}
       </div>
 
-      {/* Package Details */}
-      {packageDetails && (
-        <div className="max-w-lg mx-auto bg-white p-6 rounded shadow-md">
-          <h2 className="text-2xl font-bold mb-4">Package Details</h2>
-          <p><strong>Package Type:</strong> {packageDetails.packageType}</p>
-          <p><strong>Sender:</strong> {packageDetails.senderName} ({packageDetails.senderAddress})</p>
-          <p><strong>Receiver:</strong> {packageDetails.receiverName} ({packageDetails.receiverAddress})</p>
-          <p><strong>Receiver Phone:</strong> {packageDetails.receiverPhone}</p>
-          <p><strong>Receiver Email:</strong> {packageDetails.receiverEmail}</p>
-          <p><strong>Shipment Weight:</strong> {packageDetails.shipmentWeight}</p>
-          <p><strong>Shipment Type:</strong> {packageDetails.shipmentType}</p>
-          <p><strong>Date Shipped:</strong>{" "}
-            {packageDetails.dateShipped
-              ? new Date(packageDetails.dateShipped.seconds * 1000).toLocaleDateString()
-              : "N/A"}
-          </p>
-          <p><strong>Status:</strong> {packageDetails.status}</p>
+      {/* Loading/Error */}
+      {loading && <p className="text-[#296374] font-medium">Loading...</p>}
+      {error && <p className="text-red-500 font-medium">{error}</p>}
 
-          {/* Progress Bar */}
-          <div className="mt-2">
-            <strong>Progress:</strong>
-            <div className="w-full bg-gray-200 rounded-full h-4 mt-1">
-              <div
-                className={`h-4 rounded-full transition-all duration-500 ${
-                  packageDetails.progress === 100 ? "bg-green-500" : "bg-blue-500"
-                }`}
-                style={{ width: `${packageDetails.progress}%` }}
-              />
-            </div>
-            <p className="text-sm mt-1">{packageDetails.progress}%</p>
+      {/* Package Details */}
+      {pkg && (
+        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl space-y-6">
+          <h2 className="text-2xl font-bold text-[#0C2C55] mb-4">Package Details</h2>
+
+          {/* Status Progress Bar */}
+          <div className="flex items-center justify-between mb-6">
+            {steps.map((step, index) => (
+              <div key={step} className="flex-1 flex flex-col items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                    index <= currentStepIndex ? "bg-[#296374]" : "bg-gray-300"
+                  }`}
+                >
+                  {index + 1}
+                </div>
+                <span className="text-sm mt-2 text-gray-700">{step}</span>
+                {index < steps.length - 1 && (
+                  <div
+                    className={`flex-1 h-1 mt-2 ${
+                      index < currentStepIndex ? "bg-[#296374]" : "bg-gray-300"
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Details Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Object.entries(pkg).map(([key, value]) => (
+              <div key={key} className="flex flex-col">
+                <span className="text-sm text-gray-500">{key.replace(/([A-Z])/g, " $1")}</span>
+                <span className="text-[#296374] font-medium">{value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col md:flex-row gap-4 mt-6">
+            <button
+              onClick={printPackage}
+              className="flex-1 bg-[#629FAD] text-white py-2 rounded-xl hover:bg-[#296374] transition"
+            >
+              Print Package
+            </button>
+            <button
+              onClick={downloadPDF}
+              className="flex-1 bg-[#296374] text-white py-2 rounded-xl hover:bg-[#0C2C55] transition"
+            >
+              Download PDF
+            </button>
           </div>
         </div>
       )}
