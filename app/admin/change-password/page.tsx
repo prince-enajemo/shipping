@@ -12,7 +12,9 @@ const ChangePasswordPage = () => {
   const [success, setSuccess] = useState("");
   const router = useRouter();
 
-  const handleChangePassword = async (e) => {
+  const handleChangePassword = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -24,7 +26,7 @@ const ChangePasswordPage = () => {
         setSuccess("Password updated successfully.");
         setCurrentPassword("");
         setNewPassword("");
-        setTimeout(() => router.push("/admin"), 2000); // Redirect to admin dashboard
+        setTimeout(() => router.push("/admin"), 2000);
       } else {
         setError("No user is currently logged in.");
       }
