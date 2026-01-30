@@ -1,11 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { db, auth } from "../../firebaseConfig";
 import { collection, addDoc, onSnapshot } from "firebase/firestore";
 import { updatePassword } from "firebase/auth";
 import { v4 as uuidv4 } from "uuid";
 import { useRouter } from "next/navigation";
+import { FiPackage, FiTruck, FiCheckCircle, FiActivity } from "react-icons/fi";
+
+/* ------------------- COLORS ------------------- */
+const COLORS = {
+  primary: "#0C2C55", // dark blue
+  secondary: "#296374", // teal
+  accent: "#629FAD", // light teal
+  background: "#F9F9F9", // light gray
+  cardGradient: "bg-gradient-to-r from-[#0C2C55] to-[#296374]",
+};
 
 /* ------------------- ADD PACKAGE FORM ------------------- */
 const AddPackageForm = () => {
@@ -34,14 +44,13 @@ const AddPackageForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trackingId = uuidv4();
-
     try {
       await addDoc(collection(db, "packages"), {
         ...formData,
         trackingId,
         createdAt: new Date(),
       });
-      alert("Package added! Tracking ID: " + trackingId);
+      alert(`Package added! Tracking ID: ${trackingId}`);
       setFormData({
         packageType: "",
         senderName: "",
@@ -63,23 +72,20 @@ const AddPackageForm = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-8">
-      <h2 className="text-2xl font-bold text-[#0C2C55] mb-6">
-        Add New Package
-      </h2>
-
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-8">
+      <h2 className="text-2xl font-bold text-[#0C2C55] mb-6">Add New Package</h2>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {Object.entries(formData).map(([key, value]) => {
           if (key === "status") return null;
           return (
             <input
               key={key}
-              type={key === "progress" ? "number" : "text"}
+              type={key === "progress" ? "number" : key === "dateShipped" ? "date" : "text"}
               name={key}
               placeholder={key.replace(/([A-Z])/g, " $1")}
               value={value}
               onChange={handleInputChange}
-              className="border border-[#629FAD] p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#296374] placeholder:text-[#0C2C55] placeholder:opacity-70"
+              className="border border-[#629FAD] p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#296374] placeholder:text-[#0C2C55] placeholder:opacity-70 shadow-sm transition-all duration-200 hover:shadow-md"
             />
           );
         })}
@@ -88,7 +94,7 @@ const AddPackageForm = () => {
           name="status"
           value={formData.status}
           onChange={handleInputChange}
-          className="border border-[#629FAD] p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#296374]"
+          className="border border-[#629FAD] p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#296374] shadow-sm transition-all duration-200 hover:shadow-md"
         >
           <option value="Processing">Processing</option>
           <option value="In Transit">In Transit</option>
@@ -97,7 +103,7 @@ const AddPackageForm = () => {
 
         <button
           type="submit"
-          className="col-span-full bg-[#296374] text-white py-3 rounded-xl hover:bg-[#0C2C55] transition"
+          className="col-span-full bg-[#296374] text-white py-3 rounded-xl hover:bg-[#0C2C55] transition duration-300 font-semibold shadow-lg hover:shadow-xl"
         >
           Add Package
         </button>
@@ -127,19 +133,24 @@ const AdminAnalytics = () => {
     return () => unsub();
   }, []);
 
+  const cards = [
+    { title: "Total Packages", value: stats.totalPackages, icon: <FiPackage size={24} /> },
+    { title: "In Transit", value: stats.inTransit, icon: <FiTruck size={24} /> },
+    { title: "Delivered", value: stats.delivered, icon: <FiCheckCircle size={24} /> },
+  ];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {[
-        { title: "Total Packages", value: stats.totalPackages },
-        { title: "In Transit", value: stats.inTransit },
-        { title: "Delivered", value: stats.delivered },
-      ].map((item, i) => (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      {cards.map((item, i) => (
         <div
           key={i}
-          className="bg-white rounded-2xl shadow-lg p-6 border-l-8 border-[#296374]"
+          className="bg-gradient-to-r from-[#0C2C55] to-[#296374] text-white rounded-3xl shadow-xl p-6 flex items-center gap-4 hover:scale-105 transform transition duration-300"
         >
-          <h3 className="text-sm text-gray-500">{item.title}</h3>
-          <p className="text-3xl font-bold text-[#0C2C55]">{item.value}</p>
+          <div className="p-3 bg-white rounded-full text-[#296374]">{item.icon}</div>
+          <div>
+            <p className="text-sm opacity-80">{item.title}</p>
+            <p className="text-2xl sm:text-3xl font-bold">{item.value}</p>
+          </div>
         </div>
       ))}
     </div>
@@ -152,9 +163,7 @@ const RecentActivity = () => {
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "packages"), (snap) => {
-      const packages = snap.docs
-        .map((doc) => doc.data())
-        .slice(0, 5);
+      const packages = snap.docs.map((doc) => doc.data()).slice(0, 5);
       setRecentPackages(packages);
     });
 
@@ -162,18 +171,25 @@ const RecentActivity = () => {
   }, []);
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6">
-      <h3 className="text-lg font-bold text-[#0C2C55] mb-4">
-        Recent Packages
+    <div className="bg-white rounded-3xl shadow-2xl p-6">
+      <h3 className="text-lg font-bold text-[#0C2C55] mb-4 flex items-center gap-2">
+        <FiActivity /> Recent Packages
       </h3>
-      <ul className="space-y-3">
+      <ul className="divide-y divide-gray-200">
         {recentPackages.map((pkg, index) => (
-          <li
-            key={index}
-            className="flex justify-between items-center border-b pb-2"
-          >
-            <span className="font-medium">{pkg.trackingId}</span>
-            <span className="text-sm text-[#296374]">{pkg.status}</span>
+          <li key={index} className="flex justify-between items-center py-2">
+            <span className="font-medium text-sm sm:text-base">{pkg.trackingId}</span>
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                pkg.status === "Delivered"
+                  ? "bg-green-100 text-green-800"
+                  : pkg.status === "In Transit"
+                  ? "bg-blue-100 text-blue-800"
+                  : "bg-yellow-100 text-yellow-800"
+              }`}
+            >
+              {pkg.status}
+            </span>
           </li>
         ))}
       </ul>
@@ -199,18 +215,18 @@ const SecuritySection = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6">
+    <div className="bg-white rounded-3xl shadow-2xl p-6">
       <h3 className="text-lg font-bold text-[#0C2C55] mb-4">Security</h3>
       <input
         type="password"
         placeholder="New Password"
         value={newPassword}
         onChange={(e) => setNewPassword(e.target.value)}
-        className="border border-[#629FAD] p-3 rounded-xl w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#296374] placeholder:text-[#0C2C55] placeholder:opacity-70"
+        className="border border-[#629FAD] p-3 rounded-xl w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#296374] placeholder:text-[#0C2C55] placeholder:opacity-70 shadow-sm hover:shadow-md transition duration-200"
       />
       <button
         onClick={handleChangePassword}
-        className="w-full bg-[#296374] text-white py-2 rounded-xl hover:bg-[#0C2C55] transition"
+        className="w-full bg-[#296374] text-white py-2 rounded-xl hover:bg-[#0C2C55] transition duration-300 font-semibold shadow-lg hover:shadow-xl"
       >
         Update Password
       </button>
@@ -218,46 +234,42 @@ const SecuritySection = () => {
   );
 };
 
-/* ------------------- DASHBOARD LAYOUT ------------------- */
+/* ------------------- DASHBOARD ------------------- */
 const AdminDashboard = () => {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen flex bg-[#EDEDCE]">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#F9F9F9]">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#0C2C55] text-white flex flex-col p-6 space-y-6">
+      <aside className="w-full md:w-64 bg-[#0C2C55] text-white flex flex-col p-4 md:p-6 space-y-4 md:space-y-6">
         <h2 className="text-2xl font-bold">Shipping Admin</h2>
-        <nav className="flex flex-col space-y-3">
-          <button className="text-left px-4 py-2 rounded-xl bg-[#296374]">
+        <nav className="flex flex-col space-y-2 md:space-y-3">
+          <button className="text-left px-3 py-2 rounded-xl bg-[#296374] w-full font-semibold shadow hover:shadow-lg transition">
             Dashboard
           </button>
           <button
             onClick={() => router.push("/admin/packages")}
-            className="text-left px-4 py-2 rounded-xl hover:bg-[#296374]"
+            className="text-left px-3 py-2 rounded-xl hover:bg-[#296374] w-full font-semibold shadow hover:shadow-lg transition"
           >
             Packages
           </button>
-          <button className="text-left px-4 py-2 rounded-xl hover:bg-[#296374]">
+          <button className="text-left px-3 py-2 rounded-xl hover:bg-[#296374] w-full font-semibold shadow hover:shadow-lg transition">
             Analytics
           </button>
-          <button className="text-left px-4 py-2 rounded-xl hover:bg-[#296374]">
+          <button className="text-left px-3 py-2 rounded-xl hover:bg-[#296374] w-full font-semibold shadow hover:shadow-lg transition">
             Settings
           </button>
         </nav>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-8 space-y-8">
+      <main className="flex-1 p-4 md:p-8 space-y-6 md:space-y-8">
         {/* Top Bar */}
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-[#0C2C55]">
-            Admin Dashboard
-          </h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-[#296374] font-medium">
-              Welcome, Admin
-            </span>
-            <div className="w-10 h-10 rounded-full bg-[#629FAD]" />
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#0C2C55]">Admin Dashboard</h1>
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <span className="text-[#296374] font-medium text-sm sm:text-base">Welcome, Admin</span>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#629FAD]" />
           </div>
         </div>
 
@@ -265,26 +277,22 @@ const AdminDashboard = () => {
         <AdminAnalytics />
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="lg:col-span-2 space-y-6 lg:space-y-8">
             <AddPackageForm />
             <RecentActivity />
           </div>
 
-          {/* Right Column */}
-          <div className="space-y-8">
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h3 className="text-lg font-bold text-[#0C2C55] mb-4">
-                Quick Actions
-              </h3>
+          <div className="space-y-6 lg:space-y-8">
+            <div className="bg-white rounded-3xl shadow-2xl p-6 flex flex-col gap-3">
+              <h3 className="text-lg font-bold text-[#0C2C55] mb-2">Quick Actions</h3>
               <button
                 onClick={() => router.push("/admin/packages")}
-                className="w-full mb-3 bg-[#296374] text-white py-2 rounded-xl hover:bg-[#0C2C55]"
+                className="w-full py-2 bg-[#296374] text-white rounded-xl hover:bg-[#0C2C55] transition duration-300 font-semibold shadow-lg hover:shadow-xl"
               >
                 View All Packages
               </button>
-              <button className="w-full bg-[#629FAD] text-white py-2 rounded-xl hover:bg-[#296374]">
+              <button className="w-full py-2 bg-[#629FAD] text-white rounded-xl hover:bg-[#296374] transition duration-300 font-semibold shadow-lg hover:shadow-xl">
                 Export Reports
               </button>
             </div>

@@ -33,8 +33,8 @@ const slides = [
     title: "Trusted Delivery Across The Globe",
     subtitle:
       "From pickup to final delivery, we handle your shipments with speed, care, and professionalism.",
-    cta: "Create Shipment",
-    link: "/admin/new-shipment",
+    cta: "Check Shipment",
+    link: "/track",
   },
 ];
 
@@ -447,10 +447,10 @@ export default function Home() {
             <motion.a
               whileHover={{ scale: 1.07 }}
               whileTap={{ scale: 0.98 }}
-              href="/admin/new-shipment"
+              href="/track"
               className="bg-white text-[#0C2C55] px-10 py-5 rounded-xl font-semibold shadow-lg hover:bg-[#EDEDCE] transition"
             >
-              Create a Shipment
+              Shipment
             </motion.a>
           </div>
         </div>
@@ -488,7 +488,7 @@ export default function Home() {
                 </a>
               </li>
               <li>
-                <a href="/admin/login" className="hover:underline">
+                <a href="/login" className="hover:underline">
                   Admin Login
                 </a>
               </li>

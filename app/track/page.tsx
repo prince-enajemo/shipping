@@ -1,151 +1,179 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { db } from "../../firebaseConfig";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import jsPDF from "jspdf";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { FiTruck, FiCheckCircle } from "react-icons/fi";
 
-type PackageType = {
-  trackingId: string;
-  packageType: string;
-  senderName: string;
-  senderAddress: string;
-  receiverName: string;
-  receiverAddress: string;
-  receiverPhone: string;
-  receiverEmail: string;
-  shipmentWeight: string;
-  shipmentType: string;
-  dateShipped: string;
-  status: string;
-  progress: number;
-};
+const STATUS_STEPS = ["Processing", "In Transit", "Delivered"];
 
 const TrackPackagePage = () => {
   const [trackingId, setTrackingId] = useState("");
-  const [pkg, setPkg] = useState<PackageType | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [packageDetails, setPackageDetails] = useState<any>(null);
   const [error, setError] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [networkError, setNetworkError] = useState(false);
 
-  const fetchPackage = async () => {
-    setLoading(true);
+  const handleSearch = () => {
     setError("");
-    setPkg(null);
-    try {
-      const q = query(
-        collection(db, "packages"),
-        where("trackingId", "==", trackingId)
-      );
-      const snapshot = await getDocs(q);
-      if (snapshot.empty) {
-        setError("No package found with this tracking ID.");
-      } else {
-        setPkg(snapshot.docs[0].data() as PackageType);
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Failed to fetch package.");
+    setPackageDetails(null);
+    setNetworkError(false);
+
+    if (!trackingId.trim()) {
+      setError("Please enter a tracking ID.");
+      return;
     }
-    setLoading(false);
+
+    setSearching(true);
+
+    const q = query(
+      collection(db, "packages"),
+      where("trackingId", "==", trackingId.trim())
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        setSearching(false);
+        if (!snapshot.empty) {
+          setPackageDetails(snapshot.docs[0].data());
+        } else {
+          setError("No package found with this Tracking ID.");
+          setPackageDetails(null);
+        }
+      },
+      (err) => {
+        console.error(err);
+        setSearching(false);
+        setNetworkError(true);
+      }
+    );
+
+    return () => unsubscribe();
   };
 
-  const printPackage = () => window.print();
-
-  const downloadPDF = () => {
-    if (!pkg) return;
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Package Details", 20, 20);
-    let y = 30;
-    Object.entries(pkg).forEach(([key, value]) => {
-      doc.setFontSize(12);
-      doc.text(`${key.replace(/([A-Z])/g, " $1")}: ${value}`, 20, y);
-      y += 10;
-    });
-    doc.save(`Package-${pkg.trackingId}.pdf`);
+  const getStepColor = (step: string) => {
+    if (!packageDetails) return "bg-gray-300 border-gray-300";
+    const index = STATUS_STEPS.indexOf(step);
+    const currentIndex = STATUS_STEPS.indexOf(packageDetails.status);
+    if (index < currentIndex) return "bg-green-500 border-green-500";
+    if (index === currentIndex) return "bg-blue-500 border-blue-500 animate-pulse";
+    return "bg-gray-300 border-gray-300";
   };
 
-  // Status Steps
-  const steps = ["Processing", "In Transit", "Delivered"];
-  const currentStepIndex = pkg ? steps.indexOf(pkg.status) : 0;
+  const getTruckPosition = () => {
+    if (!packageDetails) return 0;
+    const index = STATUS_STEPS.indexOf(packageDetails.status);
+    return (index / (STATUS_STEPS.length - 1)) * 100;
+  };
 
   return (
-    <div className="min-h-screen bg-[#EDEDCE] p-6 flex flex-col items-center">
-      <h1 className="text-3xl font-bold text-[#0C2C55] mb-6">Track Your Package</h1>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-blue-100 to-blue-200 py-12 px-4 sm:px-6 lg:px-8">
+      <h1 className="text-3xl font-bold text-center text-[#0C2C55] mb-12">
+        Track Your Package
+      </h1>
 
-      {/* Search Form */}
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mb-8">
+      {/* Tracking Input */}
+      <div className="max-w-md mx-auto bg-white p-6 rounded-3xl shadow-2xl mb-10">
         <input
           type="text"
           placeholder="Enter Tracking ID"
           value={trackingId}
           onChange={(e) => setTrackingId(e.target.value)}
-          className="border border-[#629FAD] p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#296374] mb-4"
+          className="border border-[#629FAD] p-3 rounded-xl w-full mb-4 focus:outline-none focus:ring-2 focus:ring-[#296374] placeholder:text-[#0C2C55] placeholder:opacity-70 shadow-sm hover:shadow-md transition duration-200"
         />
         <button
-          onClick={fetchPackage}
-          className="w-full bg-[#296374] text-white py-3 rounded-xl hover:bg-[#0C2C55] transition"
+          onClick={handleSearch}
+          disabled={searching || !trackingId.trim()}
+          className={`w-full py-3 rounded-xl font-semibold text-white transition duration-300 ${
+            trackingId.trim()
+              ? "bg-[#296374] hover:bg-[#0C2C55] shadow-lg hover:shadow-xl"
+              : "bg-gray-400 cursor-not-allowed"
+          }`}
         >
-          Track Package
+          {searching ? "Tracking..." : "Track Package"}
         </button>
+        {(error || networkError) && (
+          <p className="text-red-600 mt-3 text-center font-medium">
+            {networkError
+              ? "Poor internet connection. Unable to reach the server."
+              : error}
+          </p>
+        )}
       </div>
 
-      {/* Loading/Error */}
-      {loading && <p className="text-[#296374] font-medium">Loading...</p>}
-      {error && <p className="text-red-500 font-medium">{error}</p>}
-
       {/* Package Details */}
-      {pkg && (
-        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl space-y-6">
-          <h2 className="text-2xl font-bold text-[#0C2C55] mb-4">Package Details</h2>
+      {packageDetails && (
+        <div className="max-w-4xl mx-auto bg-white p-8 rounded-3xl shadow-2xl space-y-10">
+          <h2 className="text-2xl font-bold text-[#0C2C55] mb-6">Package Details</h2>
 
-          {/* Status Progress Bar */}
-          <div className="flex items-center justify-between mb-6">
-            {steps.map((step, index) => (
-              <div key={step} className="flex-1 flex flex-col items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                    index <= currentStepIndex ? "bg-[#296374]" : "bg-gray-300"
-                  }`}
-                >
-                  {index + 1}
-                </div>
-                <span className="text-sm mt-2 text-gray-700">{step}</span>
-                {index < steps.length - 1 && (
-                  <div
-                    className={`flex-1 h-1 mt-2 ${
-                      index < currentStepIndex ? "bg-[#296374]" : "bg-gray-300"
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
+          {/* Info Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-[#0C2C55]">
+            <p><strong>Package Type:</strong> {packageDetails.packageType}</p>
+            <p><strong>Date Shipped:</strong> {packageDetails.dateShipped
+              ? new Date(packageDetails.dateShipped.seconds * 1000).toLocaleDateString()
+              : "N/A"}
+            </p>
+            <p><strong>Sender:</strong> {packageDetails.senderName} ({packageDetails.senderAddress})</p>
+            <p><strong>Receiver:</strong> {packageDetails.receiverName} ({packageDetails.receiverAddress})</p>
+            <p><strong>Receiver Phone:</strong> {packageDetails.receiverPhone}</p>
+            <p><strong>Receiver Email:</strong> {packageDetails.receiverEmail}</p>
+            <p><strong>Shipment Weight:</strong> {packageDetails.shipmentWeight}</p>
+            <p><strong>Shipment Type:</strong> {packageDetails.shipmentType}</p>
+            <p><strong>Estimated Delivery:</strong> {packageDetails.estimatedDelivery || "N/A"}</p>
           </div>
 
-          {/* Details Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.entries(pkg).map(([key, value]) => (
-              <div key={key} className="flex flex-col">
-                <span className="text-sm text-gray-500">{key.replace(/([A-Z])/g, " $1")}</span>
-                <span className="text-[#296374] font-medium">{value}</span>
-              </div>
-            ))}
+          {/* Vertical Timeline */}
+          <div className="relative flex flex-col items-center sm:items-start mt-8">
+            {/* Timeline Line */}
+            <div className="absolute left-5 sm:left-6 top-8 w-1 h-full bg-gray-300 rounded"></div>
+
+            {/* Truck */}
+            <div
+              className="absolute left-0 sm:left-0 -translate-x-1/2 transition-all duration-1000"
+              style={{ top: `${getTruckPosition()}%` }}
+            >
+              <FiTruck className="text-[#296374] w-8 h-8 animate-bounce" />
+            </div>
+
+            {/* Steps */}
+            <div className="flex flex-col space-y-12 z-10">
+              {STATUS_STEPS.map((step, idx) => {
+                const stepIndex = STATUS_STEPS.indexOf(packageDetails.status);
+                const completed = idx < stepIndex;
+                const current = idx === stepIndex;
+                const bgColor = completed ? "bg-green-500" : current ? "bg-blue-500 animate-pulse" : "bg-gray-300";
+                return (
+                  <div key={idx} className="flex items-center gap-4 relative">
+                    <div
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${bgColor} border-white shadow-lg`}
+                    >
+                      {completed && <FiCheckCircle className="text-white w-5 h-5" />}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className={`font-semibold ${completed ? "text-green-700" : current ? "text-blue-700" : "text-gray-500"}`}>
+                        {step}
+                      </span>
+                      {current && <span className="text-sm text-gray-600">Your package is here</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col md:flex-row gap-4 mt-6">
-            <button
-              onClick={printPackage}
-              className="flex-1 bg-[#629FAD] text-white py-2 rounded-xl hover:bg-[#296374] transition"
-            >
-              Print Package
-            </button>
-            <button
-              onClick={downloadPDF}
-              className="flex-1 bg-[#296374] text-white py-2 rounded-xl hover:bg-[#0C2C55] transition"
-            >
-              Download PDF
-            </button>
+          {/* Progress Bar */}
+          <div className="mt-10">
+            <strong className="text-[#0C2C55]">Progress:</strong>
+            <div className="w-full bg-gray-200 rounded-full h-5 mt-2 shadow-inner">
+              <div
+                className={`h-5 rounded-full transition-all duration-700 ${
+                  packageDetails.progress === 100 ? "bg-green-500" : "bg-blue-500"
+                }`}
+                style={{ width: `${packageDetails.progress}%` }}
+              />
+            </div>
+            <p className="text-sm mt-1 text-[#0C2C55] font-medium">{packageDetails.progress}%</p>
           </div>
         </div>
       )}

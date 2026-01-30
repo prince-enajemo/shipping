@@ -54,14 +54,14 @@ export default function Navbar() {
 
           {/* Desktop Buttons */}
           <div className="hidden md:flex items-center gap-4">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            {/* <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 href="/admin/login"
                 className="border border-white text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white hover:text-[#0C2C55] transition"
               >
                 Admin Login
               </Link>
-            </motion.div>
+            </motion.div> */}
 
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
