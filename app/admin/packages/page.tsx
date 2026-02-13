@@ -9,6 +9,7 @@ import {
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
+import MapPicker from "@/components/MapPicker";
 
 // 🎨 Brand Colors
 const COLORS = {
@@ -16,6 +17,12 @@ const COLORS = {
   secondary: "#296374",
   accent: "#629FAD",
   background: "#EDEDCE",
+};
+
+type LocationPoint = {
+  lat: number | null;
+  lng: number | null;
+  address?: string;
 };
 
 type PackageType = {
@@ -33,6 +40,14 @@ type PackageType = {
   dateShipped: string;
   status: string;
   progress: number;
+  autoMove?: boolean;
+  timeToComplete?: number; // in minutes
+  location?: {
+    origin?: LocationPoint;
+    current?: LocationPoint;
+    destination?: LocationPoint;
+    updatedAt?: any;
+  };
 };
 
 const AdminPackagesPage = () => {
@@ -53,6 +68,50 @@ const AdminPackagesPage = () => {
     return () => unsub();
   }, []);
 
+  // 📍 Automatic movement logic
+  const startAutoMovement = async (pkg: PackageType) => {
+    if (
+      !pkg.autoMove ||
+      !pkg.timeToComplete ||
+      !pkg.location?.origin?.lat ||
+      !pkg.location?.destination?.lat
+    )
+      return;
+
+    const totalTimeMs = pkg.timeToComplete * 60 * 1000;
+    const startTime = Date.now();
+
+    const interval = setInterval(async () => {
+      const elapsed = Date.now() - startTime;
+      let fraction = elapsed / totalTimeMs;
+      if (fraction >= 1) fraction = 1;
+
+      const newPos = {
+        lat:
+          pkg.location!.origin!.lat! +
+          (pkg.location!.destination!.lat! - pkg.location!.origin!.lat!) *
+            fraction,
+        lng:
+          pkg.location!.origin!.lng! +
+          (pkg.location!.destination!.lng! - pkg.location!.origin!.lng!) *
+            fraction,
+        address: `In transit (${Math.round(fraction * 100)}%)`,
+      };
+
+      await updateDoc(doc(db, "packages", pkg.id), {
+        location: {
+          ...pkg.location,
+          current: newPos,
+          updatedAt: new Date(),
+        },
+        progress: Math.round(fraction * 100),
+        status: fraction === 1 ? "Delivered" : "In Transit",
+      });
+
+      if (fraction === 1) clearInterval(interval);
+    }, 5000); // update every 5 seconds
+  };
+
   const startEdit = (pkg: PackageType) => {
     setEditingId(pkg.id);
     setEditData(pkg);
@@ -66,14 +125,28 @@ const AdminPackagesPage = () => {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
-    setEditData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setEditData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const saveChanges = async (id: string) => {
     try {
       const { trackingId, id: _, ...dataToUpdate } = editData;
-      await updateDoc(doc(db, "packages", id), dataToUpdate);
+      await updateDoc(doc(db, "packages", id), {
+        ...dataToUpdate,
+        location: {
+          ...editData.location,
+          updatedAt: new Date(),
+        },
+      });
+
+      // Start auto movement if enabled
+      const pkg = { id, ...dataToUpdate } as PackageType;
+      startAutoMovement(pkg);
+
       setEditingId(null);
       alert("Package updated successfully!");
     } catch (error) {
@@ -94,7 +167,10 @@ const AdminPackagesPage = () => {
   };
 
   return (
-    <div className="min-h-screen p-8" style={{ backgroundColor: COLORS.background }}>
+    <div
+      className="min-h-screen p-8"
+      style={{ backgroundColor: COLORS.background }}
+    >
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -283,6 +359,120 @@ const AdminPackagesPage = () => {
                   </div>
                 )}
               </div>
+
+              {/* Auto Movement */}
+              {editingId === pkg.id && (
+                <>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1 text-gray-500">
+                      Enable Auto Movement
+                    </label>
+                    <input
+                      type="checkbox"
+                      name="autoMove"
+                      checked={editData.autoMove || false}
+                      onChange={handleChange}
+                      className="mr-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1 text-gray-500">
+                      Time to Complete (minutes)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      name="timeToComplete"
+                      value={editData.timeToComplete || 10}
+                      onChange={handleChange}
+                      className="w-full border border-gray-300 p-2 rounded-xl focus:outline-none focus:ring-2"
+                      style={{
+                        outlineColor: COLORS.secondary,
+                        borderColor: COLORS.accent,
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* 📍 Location Section */}
+            <div className="mt-8 space-y-6">
+              <h3 className="text-lg font-semibold" style={{ color: COLORS.primary }}>
+                Location Tracking
+              </h3>
+
+              {/* Origin (Read-only) */}
+              {pkg.location?.origin && (
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">
+                    Origin (Pickup Location)
+                  </p>
+                  <p className="text-sm text-gray-800 bg-gray-100 rounded-xl px-3 py-2">
+                    {pkg.location.origin.address || "Origin location set"}
+                  </p>
+                </div>
+              )}
+
+              {/* Destination (Read-only) */}
+              {pkg.location?.destination && (
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">
+                    Destination (Delivery Location)
+                  </p>
+                  <p className="text-sm text-gray-800 bg-gray-100 rounded-xl px-3 py-2">
+                    {pkg.location.destination.address || "Destination location set"}
+                  </p>
+                </div>
+              )}
+
+              {/* Current Location (Editable with Map) */}
+              {editingId === pkg.id && (
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-2">
+                    Update Current Location
+                  </p>
+
+                  <MapPicker
+                    onLocationSelect={(lat, lng) => {
+                      setEditData((prev) => ({
+                        ...prev,
+                        location: {
+                          ...prev.location,
+                          current: {
+                            lat,
+                            lng,
+                            address: prev.location?.current?.address || "",
+                          },
+                        },
+                      }));
+                    }}
+                  />
+
+                  <input
+                    type="text"
+                    placeholder="Current location description (optional)"
+                    value={editData.location?.current?.address || ""}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        location: {
+                          ...prev.location,
+                          current: {
+                            ...prev.location?.current,
+                            address: e.target.value,
+                          },
+                        },
+                      }))
+                    }
+                    className="mt-3 w-full border border-gray-300 p-2 rounded-xl focus:outline-none focus:ring-2"
+                    style={{
+                      outlineColor: COLORS.secondary,
+                      borderColor: COLORS.accent,
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         ))}

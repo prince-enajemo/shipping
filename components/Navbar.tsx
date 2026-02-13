@@ -112,7 +112,7 @@ export default function Navbar() {
                 </motion.div>
               ))}
 
-              <motion.div whileHover={{ scale: 1.05 }}>
+              {/* <motion.div whileHover={{ scale: 1.05 }}>
                 <Link
                   href="/admin/login"
                   onClick={() => setOpen(false)}
@@ -120,7 +120,7 @@ export default function Navbar() {
                 >
                   Admin Login
                 </Link>
-              </motion.div>
+              </motion.div> */}
 
               <motion.div whileHover={{ scale: 1.05 }}>
                 <Link

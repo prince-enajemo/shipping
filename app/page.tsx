@@ -98,7 +98,7 @@ export default function Home() {
                     <motion.a
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.98 }}
-                      href={slide.link}
+                      href="/track"
                       className="bg-[#629FAD] text-[#0C2C55] px-8 py-4 rounded-xl font-semibold shadow-lg hover:bg-[#EDEDCE] transition"
                     >
                       {slide.cta}
