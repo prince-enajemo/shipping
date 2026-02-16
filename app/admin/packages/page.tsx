@@ -125,7 +125,9 @@ const AdminPackagesPage = () => {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type } = e.target;
+    const checked = type === "checkbox" && (e.target as HTMLInputElement).checked;
+
     setEditData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -164,6 +166,31 @@ const AdminPackagesPage = () => {
       console.error("Error deleting package:", error);
       alert("Failed to delete package.");
     }
+  };
+
+  // Fix for rendering pkg[key]
+  const renderPackageValue = (value: any) => {
+    if (typeof value === "object" && value !== null) {
+      return JSON.stringify(value, null, 2); // Convert objects to a readable string
+    }
+    return value?.toString() || "N/A"; // Convert other values to string or show "N/A"
+  };
+
+  // Refine the handleLocationUpdate function to ensure compatibility
+  const handleLocationUpdate = (prev: Partial<PackageType>) => {
+    const updatedLocation = {
+      ...prev.location,
+      current: {
+        address: "Updated Address",
+        lat: prev.location?.current?.lat ?? null, // Use nullish coalescing to ensure lat is not undefined
+        lng: prev.location?.current?.lng ?? null, // Use nullish coalescing to ensure lng is not undefined
+      },
+    };
+
+    return {
+      ...prev,
+      location: updatedLocation,
+    };
   };
 
   return (
@@ -279,7 +306,7 @@ const AdminPackagesPage = () => {
                     />
                   ) : (
                     <p className="text-sm text-gray-800 bg-gray-50 rounded-xl px-3 py-2">
-                      {pkg[key]}
+                      {renderPackageValue(pkg[key])}
                     </p>
                   )}
                 </div>
@@ -435,17 +462,7 @@ const AdminPackagesPage = () => {
 
                   <MapPicker
                     onLocationSelect={(lat, lng) => {
-                      setEditData((prev) => ({
-                        ...prev,
-                        location: {
-                          ...prev.location,
-                          current: {
-                            lat,
-                            lng,
-                            address: prev.location?.current?.address || "",
-                          },
-                        },
-                      }));
+                      setEditData((prev) => handleLocationUpdate(prev));
                     }}
                   />
 
