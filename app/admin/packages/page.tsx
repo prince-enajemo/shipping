@@ -181,10 +181,12 @@ const AdminPackagesPage = () => {
     const updatedLocation = {
       ...prev.location,
       current: {
-        address: "Updated Address",
+        address: prev.location?.current?.address || "Updated Address",
         lat: prev.location?.current?.lat ?? null, // Ensure lat is not undefined
         lng: prev.location?.current?.lng ?? null, // Ensure lng is not undefined
       },
+      origin: prev.location?.origin || null,
+      destination: prev.location?.destination || null,
     };
 
     return {
