@@ -182,8 +182,8 @@ const AdminPackagesPage = () => {
       ...prev.location,
       current: {
         address: "Updated Address",
-        lat: prev.location?.current?.lat ?? null, // Use nullish coalescing to ensure lat is not undefined
-        lng: prev.location?.current?.lng ?? null, // Use nullish coalescing to ensure lng is not undefined
+        lat: prev.location?.current?.lat ?? null, // Ensure lat is not undefined
+        lng: prev.location?.current?.lng ?? null, // Ensure lng is not undefined
       },
     };
 
